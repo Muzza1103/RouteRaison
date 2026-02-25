@@ -60,21 +60,36 @@ class TomTomTrafficService:
         scenarios: List[str] = []
         incidents = (data.get("incidents") or [])
 
-        if incidents:
-            #any incident in bbox => traffic_heavy
+        significant_incidents = []
+        road_closure_detected = False
+
+        for inc in incidents:
+            props = inc.get("properties") or {}
+
+            delay = props.get("magnitudeOfDelay", 0)
+            events = props.get("events") or []
+
+            if delay >= 3:
+                significant_incidents.append(inc)
+
+            for ev in events:
+                desc = (ev.get("description") or "").lower()
+
+                if (
+                        ("road closed" in desc or "full closure" in desc)
+                        and delay >= 3
+                ):
+                    road_closure_detected = True
+                    break
+
+            if road_closure_detected:
+                break
+
+        if significant_incidents:
             scenarios.append("traffic_heavy")
 
-            # Detect closures from descriptions
-            for inc in incidents:
-                props = inc.get("properties") or {}
-                events = props.get("events") or []
-                for ev in events:
-                    desc = (ev.get("description") or "").lower()
-                    if "closed" in desc or "closure" in desc or "road closed" in desc:
-                        scenarios.append("road_closure")
-                        break
-                if "road_closure" in scenarios:
-                    break
+        if road_closure_detected:
+            scenarios.append("road_closure")
 
         out: List[str] = []
         seen = set()

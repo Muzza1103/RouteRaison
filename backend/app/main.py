@@ -243,10 +243,11 @@ async def build_scenarios(req: PlanRequest) -> ContextResponse:
     if not req.road_closure and not req.traffic_heavy:
         try:
             margin = float(os.getenv("TOMTOM_BBOX_MARGIN_DEG", "0.02"))
-            min_lat = min(req.origin.lat, req.destination.lat) - margin
-            max_lat = max(req.origin.lat, req.destination.lat) + margin
-            min_lon = min(req.origin.lon, req.destination.lon) - margin
-            max_lon = max(req.origin.lon, req.destination.lon) + margin
+
+            min_lat = req.origin.lat - margin
+            max_lat = req.origin.lat + margin
+            min_lon = req.origin.lon - margin
+            max_lon = req.origin.lon + margin
 
             tt = await traffic_service.incidents_bbox(
                 min_lat=min_lat, min_lon=min_lon, max_lat=max_lat, max_lon=max_lon
